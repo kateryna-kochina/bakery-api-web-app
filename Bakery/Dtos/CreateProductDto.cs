@@ -16,8 +16,9 @@ public record CreateProductDto
     [StringLength(500)]
     string Image,
 
+    [Required]
     int CategoryId,
 
     [StringLength(1000)]
-    string Description
+    string? Description
 );

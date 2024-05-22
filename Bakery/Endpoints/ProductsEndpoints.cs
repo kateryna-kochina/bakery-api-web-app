@@ -1,42 +1,65 @@
 ﻿using Bakery.Data;
 using Bakery.Dtos;
-using Bakery.Models;
+using Bakery.Mapping;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bakery.Endpoints;
 
 public static class ProductsEndpoints
 {
-    const string GetProductEndpointName = "GetProduct";
-
     public static RouteGroupBuilder MapProductsEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("products");
 
         // GET /products
         group.MapGet("/", async (BakeryDbContext dbContext) =>
-            await dbContext.Products
-                .ToListAsync()
-        );
+        {
+            var products = await dbContext.Products
+                .Include(c => c.Category)
+                .ToListAsync();
 
+            return Results.Ok(products);
+        });
+
+        // GET /products/{id}
+        group.MapGet("/{id}", async (BakeryDbContext dbContext, int id) =>
+        {
+            var product = await dbContext.Products
+                .Include(c => c.Category)
+                .FirstAsync(p => p.Id == id);
+
+            if (product is null)
+            {
+                return Results.NotFound();
+            }
+
+            return Results.Ok(product.ToProductSummaryDto());
+        });
+
+        // POST /products
         group.MapPost("/", async (BakeryDbContext dbContext, CreateProductDto newProduct) =>
         {
-            var product = new Product
+            // validation if category exists
+            var category = await dbContext.Categories.FindAsync(newProduct.CategoryId);
+
+            if (category is null)
             {
-                Title = newProduct.Title,
-                Price = newProduct.Price,
-                Image = newProduct.Image,
-                CategoryId = newProduct.CategoryId,
-                Category = dbContext.Categories.FirstOrDefault(c => c.Id == newProduct.CategoryId),
-                Description = newProduct.Description
-            };
+                return Results.BadRequest("Unknown CategoryId provided.");
+            }
+
+            var product = newProduct.ToEntity();
 
             dbContext.Products.Add(product);
             await dbContext.SaveChangesAsync();
 
-            return Results.Created($"/products/{product.Id}", product);
-        }
-        );
+            var createdProduct = await dbContext.Products
+                .Include(c => c.Category)
+                .FirstAsync(p => p.Id == product.Id);
+
+            return Results.Created(
+                $"/products/{createdProduct.Id}",
+                createdProduct.ToProductSummaryDto());
+        });
 
         return group;
     }
