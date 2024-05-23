@@ -17,6 +17,7 @@ var app = builder.Build();
 
 app.MapProductsEndpoints();
 app.MapCategoriesEndpoints();
+app.MapOptionsEndpoints();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

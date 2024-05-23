@@ -5,7 +5,7 @@ namespace Bakery.Mapping;
 
 public static class CategoryMapping
 {
-    public static CategoryDetailsDto ToCategorySummaryDto(this Category category)
+    public static CategoryDetailsDto ToCategoryDetailsDto(this Category category)
     {
         return new CategoryDetailsDto(
             category.Id,

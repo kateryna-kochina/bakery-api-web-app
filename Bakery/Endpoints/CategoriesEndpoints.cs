@@ -9,7 +9,7 @@ public static class CategoriesEndpoints
 {
     public static RouteGroupBuilder MapCategoriesEndpoints(this WebApplication app)
     {
-        var group = app.MapGroup("categories");
+        var group = app.MapGroup("categories").WithTags("Categories");
 
         // GET /categories
         group.MapGet("/", async (BakeryDbContext dbContext) =>
@@ -17,11 +17,13 @@ public static class CategoriesEndpoints
             var categories = await dbContext.Categories.ToListAsync();
 
             var categoriesDtos = categories
-                .Select(c => c.ToCategorySummaryDto())
+                .Select(c => c.ToCategoryDetailsDto())
                 .ToList();
 
             return Results.Ok(categoriesDtos);
-        });
+        })
+        .WithName("GetCategories")
+        .Produces<List<CategoryDetailsDto>>(StatusCodes.Status200OK);
 
         // GET /categories/{id}
         group.MapGet("/{id}", async (int id, BakeryDbContext dbContext) =>
@@ -34,8 +36,11 @@ public static class CategoriesEndpoints
                 return Results.NotFound();
             }
 
-            return Results.Ok(category.ToCategorySummaryDto());
-        });
+            return Results.Ok(category.ToCategoryDetailsDto());
+        })
+        .WithName("GetCategoryById")
+        .Produces<CategoryDetailsDto>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status404NotFound);
 
         // POST /categories
         group.MapPost("/", async (CreateCategoryDto newCategory, BakeryDbContext dbContext) =>
@@ -49,9 +54,12 @@ public static class CategoriesEndpoints
                 .FirstAsync(c => c.Id == category.Id);
 
             return Results.Created(
-                $"/products/{createdCategory.Id}",
-                createdCategory.ToCategorySummaryDto());
-        });
+                $"/categories/{createdCategory.Id}",
+                createdCategory.ToCategoryDetailsDto());
+        })
+        .WithName("CreateCategory")
+        .Produces<CategoryDetailsDto>(StatusCodes.Status201Created)
+        .Produces(StatusCodes.Status400BadRequest);
 
         // PUT /categories/{id}
         group.MapPut("/{id}", async (int id, UpdateCategoryDto updatedCategory, BakeryDbContext dbContext) =>
@@ -69,7 +77,10 @@ public static class CategoriesEndpoints
             await dbContext.SaveChangesAsync();
 
             return Results.NoContent();
-        });
+        })
+        .WithName("UpdateCategory")
+        .Produces(StatusCodes.Status204NoContent)
+        .Produces(StatusCodes.Status404NotFound);
 
         // DELETE /categories/{id}
         group.MapDelete("/{id}", async (int id, BakeryDbContext dbContext) =>
@@ -86,7 +97,10 @@ public static class CategoriesEndpoints
                 .ExecuteDeleteAsync();
 
             return Results.NoContent();
-        });
+        })
+        .WithName("DeleteCategory")
+        .Produces(StatusCodes.Status204NoContent)
+        .Produces(StatusCodes.Status404NotFound);
 
         return group;
     }

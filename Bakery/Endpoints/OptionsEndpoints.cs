@@ -9,7 +9,7 @@ public static class OptionsEndpoints
 {
     public static RouteGroupBuilder MapOptionsEndpoints(this WebApplication app)
     {
-        var group = app.MapGroup("options");
+        var group = app.MapGroup("options").WithTags("Options");
 
         // GET /options
         group.MapGet("/", async (BakeryDbContext dbContext) =>
@@ -17,11 +17,13 @@ public static class OptionsEndpoints
             var options = await dbContext.Options.ToListAsync();
 
             var optionsDtos = options
-                .Select(o => o.ToOptionSummaryDto())
+                .Select(o => o.ToOptionDetailsDto())
                 .ToList();
 
             return Results.Ok(optionsDtos);
-        });
+        })
+        .WithName("GetOptions")
+        .Produces<List<OptionDetailsDto>>(StatusCodes.Status200OK);
 
         // GET /options/{id}
         group.MapGet("/{id}", async (int id, BakeryDbContext dbContext) =>
@@ -34,8 +36,11 @@ public static class OptionsEndpoints
                 return Results.NotFound();
             }
 
-            return Results.Ok(option.ToOptionSummaryDto());
-        });
+            return Results.Ok(option.ToOptionDetailsDto());
+        })
+        .WithName("GetOptionById")
+        .Produces<OptionDetailsDto>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status404NotFound);
 
         // POST /options
         group.MapPost("/", async (CreateOptionDto newOption, BakeryDbContext dbContext) =>
@@ -49,9 +54,12 @@ public static class OptionsEndpoints
                 .FirstAsync(o => o.Id == option.Id);
 
             return Results.Created(
-                $"/products/{createdOption.Id}",
-                createdOption.ToOptionSummaryDto());
-        });
+                $"/options/{createdOption.Id}",
+                createdOption.ToOptionDetailsDto());
+        })
+        .WithName("CreateOption")
+        .Produces<OptionDetailsDto>(StatusCodes.Status201Created)
+        .Produces(StatusCodes.Status400BadRequest);
 
         // PUT /options/{id}
         group.MapPut("/{id}", async (int id, UpdateOptionDto updatedOption, BakeryDbContext dbContext) =>
@@ -69,7 +77,10 @@ public static class OptionsEndpoints
             await dbContext.SaveChangesAsync();
 
             return Results.NoContent();
-        });
+        })
+        .WithName("UpdateOption")
+        .Produces(StatusCodes.Status204NoContent)
+        .Produces(StatusCodes.Status404NotFound);
 
         // DELETE /options/{id}
         group.MapDelete("/{id}", async (int id, BakeryDbContext dbContext) =>
@@ -86,7 +97,10 @@ public static class OptionsEndpoints
                 .ExecuteDeleteAsync();
 
             return Results.NoContent();
-        });
+        })
+        .WithName("DeleteOption")
+        .Produces(StatusCodes.Status204NoContent)
+        .Produces(StatusCodes.Status404NotFound);
 
         return group;
     }

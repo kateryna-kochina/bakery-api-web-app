@@ -5,7 +5,7 @@ namespace Bakery.Mapping;
 
 public static class OptionMapping
 {
-    public static OptionDetailsDto ToOptionSummaryDto(this Option option)
+    public static OptionDetailsDto ToOptionDetailsDto(this Option option)
     {
         return new OptionDetailsDto(
             option.Id,

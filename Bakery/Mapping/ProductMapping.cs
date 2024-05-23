@@ -5,7 +5,7 @@ namespace Bakery.Mapping;
 
 public static class ProductMapping
 {
-    public static ProductDetailsDto ToProductSummaryDto(this Product product)
+    public static ProductDetailsDto ToProductDetailsDto(this Product product)
     {
         return new ProductDetailsDto(
             product.Id,
