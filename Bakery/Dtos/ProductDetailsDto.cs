@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace Bakery.Dtos;
 
 public record ProductDetailsDto(
@@ -7,6 +5,7 @@ public record ProductDetailsDto(
     string Title,
     decimal Price,
     string Image,
+    int CategoryId,
     string CategoryName,
     string? Description
 );
