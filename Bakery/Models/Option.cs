@@ -3,6 +3,6 @@
 public class Option
 {
     public int Id { get; set; }
-    public string? OptionName { get; set; }
-    public double Coefficient { get; set; }
+    public required string OptionName { get; set; }
+    public required double Coefficient { get; set; }
 }

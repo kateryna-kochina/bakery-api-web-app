@@ -16,6 +16,7 @@ builder.Services.AddSqlite<BakeryDbContext>(connectionString);
 var app = builder.Build();
 
 app.MapProductsEndpoints();
+app.MapCategoriesEndpoints();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

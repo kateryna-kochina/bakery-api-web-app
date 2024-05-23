@@ -12,17 +12,28 @@ public static class ProductsEndpoints
         var group = app.MapGroup("products");
 
         // GET /products
-        group.MapGet("/", async (BakeryDbContext dbContext) =>
+        group.MapGet("/", async (int? categoryId, BakeryDbContext dbContext) =>
         {
-            var products = await dbContext.Products
-                .Include(c => c.Category)
-                .ToListAsync();
+            var query = dbContext.Products
+                    .Include(c => c.Category)
+                    .AsQueryable();
 
-            return Results.Ok(products);
+            if (categoryId.HasValue)
+            {
+                query = query.Where(c => c.CategoryId == categoryId);
+            }
+
+            var products = await query.ToListAsync();
+
+            var productsDtos = products
+                .Select(p => p.ToProductSummaryDto())
+                .ToList();
+
+            return Results.Ok(productsDtos);
         });
 
         // GET /products/{id}
-        group.MapGet("/{id}", async (BakeryDbContext dbContext, int id) =>
+        group.MapGet("/{id}", async (int id, BakeryDbContext dbContext) =>
         {
             var product = await dbContext.Products
                 .Include(c => c.Category)
@@ -37,14 +48,14 @@ public static class ProductsEndpoints
         });
 
         // POST /products
-        group.MapPost("/", async (BakeryDbContext dbContext, CreateProductDto newProduct) =>
+        group.MapPost("/", async (CreateProductDto newProduct, BakeryDbContext dbContext) =>
         {
             // validation if provided category exists
             var category = await dbContext.Categories.FindAsync(newProduct.CategoryId);
 
             if (category is null)
             {
-                return Results.BadRequest("Unknown CategoryId provided.");
+                return Results.NotFound("Unknown CategoryId provided.");
             }
 
             var product = newProduct.ToEntity();
@@ -62,7 +73,7 @@ public static class ProductsEndpoints
         });
 
         // PUT /products/{id}
-        group.MapPut("/{id}", async (BakeryDbContext dbContext, UpdateProductDto updatedProduct, int id) =>
+        group.MapPut("/{id}", async (int id, UpdateProductDto updatedProduct, BakeryDbContext dbContext) =>
         {
             var existingProduct = await dbContext.Products.FindAsync(id);
 
@@ -81,7 +92,7 @@ public static class ProductsEndpoints
         });
 
         // DELETE /products/{id}
-        group.MapDelete("/{id}", async (BakeryDbContext dbContext, int id) =>
+        group.MapDelete("/{id}", async (int id, BakeryDbContext dbContext) =>
         {
             var existingProduct = await dbContext.Products.FindAsync(id);
 
