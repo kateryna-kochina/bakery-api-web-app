@@ -1,17 +1,21 @@
 using Bakery.Data;
 using Bakery.Endpoints;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
-var connectionString = builder.Configuration.GetConnectionString("Bakery") ?? "Data Source=Bakery.db";
 
-// Add services to the container.
+// Add services to the container
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Bakery API", Description = "Welcome to the Bakery!", Version = "v1" });
 });
+
+// Add DbContext
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddSqlite<BakeryDbContext>(connectionString);
+
 
 var app = builder.Build();
 
@@ -19,7 +23,7 @@ app.MapProductsEndpoints();
 app.MapCategoriesEndpoints();
 app.MapOptionsEndpoints();
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

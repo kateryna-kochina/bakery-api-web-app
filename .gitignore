@@ -45,3 +45,4 @@ msbuild.wrn
 
 # Database
 *.db
+*.db-*
