@@ -1,7 +1,6 @@
-using Bakery.Data;
 using Bakery.Dtos;
 using Bakery.Mapping;
-using Microsoft.EntityFrameworkCore;
+using Bakery.Repositories.Contracts;
 
 namespace Bakery.Endpoints;
 
@@ -12,9 +11,9 @@ public static class CategoriesEndpoints
         var group = app.MapGroup("categories").WithTags("Categories");
 
         // GET /categories
-        group.MapGet("/", async (BakeryDbContext dbContext) =>
+        group.MapGet("/", async (ICategoryRepository categoryRepository) =>
         {
-            var categories = await dbContext.Categories.ToListAsync();
+            var categories = await categoryRepository.GetCategoriesAsync();
 
             var categoriesDtos = categories
                 .Select(c => c.ToCategoryDetailsDto())
@@ -26,10 +25,9 @@ public static class CategoriesEndpoints
         .Produces<List<CategoryDetailsDto>>(StatusCodes.Status200OK);
 
         // GET /categories/{id}
-        group.MapGet("/{id}", async (int id, BakeryDbContext dbContext) =>
+        group.MapGet("/{id}", async (int id, ICategoryRepository categoryRepository) =>
         {
-            var category = await dbContext.Categories
-                .FirstOrDefaultAsync(c => c.Id == id);
+            var category = await categoryRepository.GetCategoryByIdAsync(id);
 
             if (category is null)
             {
@@ -43,18 +41,12 @@ public static class CategoriesEndpoints
         .Produces(StatusCodes.Status404NotFound);
 
         // POST /categories
-        group.MapPost("/", async (CreateCategoryDto newCategory, BakeryDbContext dbContext) =>
+        group.MapPost("/", async (CreateCategoryDto newCategory, ICategoryRepository categoryRepository) =>
         {
-            var category = newCategory.ToEntity();
-
-            dbContext.Categories.Add(category);
-            await dbContext.SaveChangesAsync();
-
-            var createdCategory = await dbContext.Categories
-                .FirstAsync(c => c.Id == category.Id);
+            var createdCategory = await categoryRepository.CreateCategoryAsync(newCategory);
 
             return Results.Created(
-                $"/categories/{createdCategory.Id}",
+                $"/categories/{createdCategory!.Id}",
                 createdCategory.ToCategoryDetailsDto());
         })
         .WithName("CreateCategory")
@@ -62,19 +54,14 @@ public static class CategoriesEndpoints
         .Produces(StatusCodes.Status400BadRequest);
 
         // PUT /categories/{id}
-        group.MapPut("/{id}", async (int id, UpdateCategoryDto updatedCategory, BakeryDbContext dbContext) =>
+        group.MapPut("/{id}", async (int id, UpdateCategoryDto updatedCategory, ICategoryRepository categoryRepository) =>
         {
-            var existingCategory = await dbContext.Categories.FindAsync(id);
+            var result = await categoryRepository.UpdateCategoryAsync(id, updatedCategory);
 
-            if (existingCategory is null)
+            if (!result)
             {
-                return Results.NotFound();
+                return Results.NotFound("Invalid data provided.");
             }
-
-            dbContext.Entry(existingCategory)
-                .CurrentValues
-                .SetValues(updatedCategory.ToEntity(id));
-            await dbContext.SaveChangesAsync();
 
             return Results.NoContent();
         })
@@ -83,18 +70,14 @@ public static class CategoriesEndpoints
         .Produces(StatusCodes.Status404NotFound);
 
         // DELETE /categories/{id}
-        group.MapDelete("/{id}", async (int id, BakeryDbContext dbContext) =>
+        group.MapDelete("/{id}", async (int id, ICategoryRepository categoryRepository) =>
         {
-            var existingCategory = await dbContext.Categories.FindAsync(id);
+            var result = await categoryRepository.DeleteCategoryAsync(id);
 
-            if (existingCategory is null)
+            if (!result)
             {
                 return Results.NotFound();
             }
-
-            await dbContext.Categories
-                .Where(c => c.Id == id)
-                .ExecuteDeleteAsync();
 
             return Results.NoContent();
         })

@@ -1,7 +1,6 @@
-﻿using Bakery.Data;
-using Bakery.Dtos;
+﻿using Bakery.Dtos;
 using Bakery.Mapping;
-using Microsoft.EntityFrameworkCore;
+using Bakery.Repositories;
 
 namespace Bakery.Endpoints;
 
@@ -12,18 +11,9 @@ public static class ProductsEndpoints
         var group = app.MapGroup("products").WithTags("Products");
 
         // GET /products
-        group.MapGet("/", async (int? categoryId, BakeryDbContext dbContext) =>
+        group.MapGet("/", async (int? categoryId, IProductRepository productRepository) =>
         {
-            var query = dbContext.Products
-                    .Include(c => c.Category)
-                    .AsQueryable();
-
-            if (categoryId.HasValue)
-            {
-                query = query.Where(c => c.CategoryId == categoryId);
-            }
-
-            var products = await query.ToListAsync();
+            var products = await productRepository.GetProductsAsync(categoryId);
 
             var productsDtos = products
                 .Select(p => p.ToProductDetailsDto())
@@ -35,11 +25,9 @@ public static class ProductsEndpoints
         .Produces<List<ProductDetailsDto>>(StatusCodes.Status200OK);
 
         // GET /products/{id}
-        group.MapGet("/{id}", async (int id, BakeryDbContext dbContext) =>
+        group.MapGet("/{id}", async (int id, IProductRepository productRepository) =>
         {
-            var product = await dbContext.Products
-                .Include(c => c.Category)
-                .FirstOrDefaultAsync(p => p.Id == id);
+            var product = await productRepository.GetProductByIdAsync(id);
 
             if (product is null)
             {
@@ -53,27 +41,12 @@ public static class ProductsEndpoints
         .Produces(StatusCodes.Status404NotFound);
 
         // POST /products
-        group.MapPost("/", async (CreateProductDto newProduct, BakeryDbContext dbContext) =>
+        group.MapPost("/", async (CreateProductDto newProduct, IProductRepository productRepository) =>
         {
-            // validation if provided category exists
-            var category = await dbContext.Categories.FindAsync(newProduct.CategoryId);
-
-            if (category is null)
-            {
-                return Results.NotFound("Unknown CategoryId provided.");
-            }
-
-            var product = newProduct.ToEntity();
-
-            dbContext.Products.Add(product);
-            await dbContext.SaveChangesAsync();
-
-            var createdProduct = await dbContext.Products
-                .Include(c => c.Category)
-                .FirstAsync(p => p.Id == product.Id);
+            var createdProduct = await productRepository.CreateProductAsync(newProduct);
 
             return Results.Created(
-                $"/products/{createdProduct.Id}",
+                $"/products/{createdProduct!.Id}",
                 createdProduct.ToProductDetailsDto());
         })
         .WithName("CreateProduct")
@@ -81,19 +54,14 @@ public static class ProductsEndpoints
         .Produces(StatusCodes.Status404NotFound);
 
         // PUT /products/{id}
-        group.MapPut("/{id}", async (int id, UpdateProductDto updatedProduct, BakeryDbContext dbContext) =>
+        group.MapPut("/{id}", async (int id, UpdateProductDto updatedProduct, IProductRepository productRepository) =>
         {
-            var existingProduct = await dbContext.Products.FindAsync(id);
+            var result = await productRepository.UpdateProductAsync(id, updatedProduct);
 
-            if (existingProduct is null)
+            if (!result)
             {
-                return Results.NotFound();
+                return Results.NotFound("Invalid data provided.");
             }
-
-            dbContext.Entry(existingProduct)
-                .CurrentValues
-                .SetValues(updatedProduct.ToEntity(id));
-            await dbContext.SaveChangesAsync();
 
             return Results.NoContent();
 
@@ -103,18 +71,14 @@ public static class ProductsEndpoints
         .Produces(StatusCodes.Status404NotFound);
 
         // DELETE /products/{id}
-        group.MapDelete("/{id}", async (int id, BakeryDbContext dbContext) =>
+        group.MapDelete("/{id}", async (int id, IProductRepository productRepository) =>
         {
-            var existingProduct = await dbContext.Products.FindAsync(id);
+            var result = await productRepository.DeleteProductAsync(id);
 
-            if (existingProduct is null)
+            if (!result)
             {
                 return Results.NotFound();
             }
-
-            await dbContext.Products
-                .Where(p => p.Id == id)
-                .ExecuteDeleteAsync();
 
             return Results.NoContent();
         })

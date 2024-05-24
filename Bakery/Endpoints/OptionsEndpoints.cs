@@ -1,7 +1,6 @@
-using Bakery.Data;
 using Bakery.Dtos;
 using Bakery.Mapping;
-using Microsoft.EntityFrameworkCore;
+using Bakery.Repositories.Contracts;
 
 namespace Bakery.Endpoints;
 
@@ -12,9 +11,9 @@ public static class OptionsEndpoints
         var group = app.MapGroup("options").WithTags("Options");
 
         // GET /options
-        group.MapGet("/", async (BakeryDbContext dbContext) =>
+        group.MapGet("/", async (IOptionRepository optionRepository) =>
         {
-            var options = await dbContext.Options.ToListAsync();
+            var options = await optionRepository.GetOptionsAsync();
 
             var optionsDtos = options
                 .Select(o => o.ToOptionDetailsDto())
@@ -26,10 +25,9 @@ public static class OptionsEndpoints
         .Produces<List<OptionDetailsDto>>(StatusCodes.Status200OK);
 
         // GET /options/{id}
-        group.MapGet("/{id}", async (int id, BakeryDbContext dbContext) =>
+        group.MapGet("/{id}", async (int id, IOptionRepository optionRepository) =>
         {
-            var option = await dbContext.Options
-                .FirstOrDefaultAsync(o => o.Id == id);
+            var option = await optionRepository.GetOptionByIdAsync(id);
 
             if (option is null)
             {
@@ -43,18 +41,12 @@ public static class OptionsEndpoints
         .Produces(StatusCodes.Status404NotFound);
 
         // POST /options
-        group.MapPost("/", async (CreateOptionDto newOption, BakeryDbContext dbContext) =>
+        group.MapPost("/", async (CreateOptionDto newOption, IOptionRepository optionRepository) =>
         {
-            var option = newOption.ToEntity();
-
-            dbContext.Options.Add(option);
-            await dbContext.SaveChangesAsync();
-
-            var createdOption = await dbContext.Options
-                .FirstAsync(o => o.Id == option.Id);
+            var createdOption = await optionRepository.CreateOptionAsync(newOption);
 
             return Results.Created(
-                $"/options/{createdOption.Id}",
+                $"/options/{createdOption!.Id}",
                 createdOption.ToOptionDetailsDto());
         })
         .WithName("CreateOption")
@@ -62,19 +54,14 @@ public static class OptionsEndpoints
         .Produces(StatusCodes.Status400BadRequest);
 
         // PUT /options/{id}
-        group.MapPut("/{id}", async (int id, UpdateOptionDto updatedOption, BakeryDbContext dbContext) =>
+        group.MapPut("/{id}", async (int id, UpdateOptionDto updatedOption, IOptionRepository optionRepository) =>
         {
-            var existingOption = await dbContext.Options.FindAsync(id);
+            var result = await optionRepository.UpdateOptionAsync(id, updatedOption);
 
-            if (existingOption is null)
+            if (!result)
             {
                 return Results.NotFound();
             }
-
-            dbContext.Entry(existingOption)
-                .CurrentValues
-                .SetValues(updatedOption.ToEntity(id));
-            await dbContext.SaveChangesAsync();
 
             return Results.NoContent();
         })
@@ -83,18 +70,14 @@ public static class OptionsEndpoints
         .Produces(StatusCodes.Status404NotFound);
 
         // DELETE /options/{id}
-        group.MapDelete("/{id}", async (int id, BakeryDbContext dbContext) =>
+        group.MapDelete("/{id}", async (int id, IOptionRepository optionRepository) =>
         {
-            var existingOption = await dbContext.Options.FindAsync(id);
+            var result = await optionRepository.DeleteOptionAsync(id);
 
-            if (existingOption is null)
+            if (!result)
             {
                 return Results.NotFound();
             }
-
-            await dbContext.Options
-                .Where(o => o.Id == id)
-                .ExecuteDeleteAsync();
 
             return Results.NoContent();
         })

@@ -1,5 +1,7 @@
 using Bakery.Data;
 using Bakery.Endpoints;
+using Bakery.Repositories;
+using Bakery.Repositories.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
@@ -15,6 +17,11 @@ builder.Services.AddSwaggerGen(c =>
 // Add DbContext
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddSqlite<BakeryDbContext>(connectionString);
+
+// Register services
+builder.Services.AddTransient<IProductRepository, ProductRepository>();
+builder.Services.AddTransient<ICategoryRepository, CategoryRepository>();
+builder.Services.AddTransient<IOptionRepository, OptionRepository>();
 
 
 var app = builder.Build();
