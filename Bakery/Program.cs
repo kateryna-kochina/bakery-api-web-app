@@ -1,5 +1,6 @@
 using Bakery.Data;
 using Bakery.Endpoints;
+using Bakery.Mapping;
 using Bakery.Repositories;
 using Bakery.Repositories.Contracts;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,7 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Bakery API", Description = "Welcome to the Bakery!", Version = "v1" });
 });
+builder.Services.AddAutoMapper(typeof(MappingProfiles));
 
 // Add DbContext
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

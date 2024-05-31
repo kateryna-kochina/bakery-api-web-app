@@ -1,5 +1,5 @@
+using AutoMapper;
 using Bakery.Dtos;
-using Bakery.Mapping;
 using Bakery.Repositories.Contracts;
 
 namespace Bakery.Endpoints;
@@ -11,13 +11,11 @@ public static class OptionsEndpoints
         var group = app.MapGroup("options").WithTags("Options");
 
         // GET /options
-        group.MapGet("/", async (IOptionRepository optionRepository) =>
+        group.MapGet("/", async (IOptionRepository optionRepository, IMapper mapper) =>
         {
             var options = await optionRepository.GetOptionsAsync();
 
-            var optionsDtos = options
-                .Select(o => o.ToOptionDetailsDto())
-                .ToList();
+            var optionsDtos = mapper.Map<List<OptionDetailsDto>>(options);
 
             return Results.Ok(optionsDtos);
         })
@@ -25,7 +23,7 @@ public static class OptionsEndpoints
         .Produces<List<OptionDetailsDto>>(StatusCodes.Status200OK);
 
         // GET /options/{id}
-        group.MapGet("/{id}", async (int id, IOptionRepository optionRepository) =>
+        group.MapGet("/{id}", async (int id, IOptionRepository optionRepository, IMapper mapper) =>
         {
             var option = await optionRepository.GetOptionByIdAsync(id);
 
@@ -34,20 +32,24 @@ public static class OptionsEndpoints
                 return Results.NotFound();
             }
 
-            return Results.Ok(option.ToOptionDetailsDto());
+            var optionDto = mapper.Map<OptionDetailsDto>(option);
+
+            return Results.Ok(optionDto);
         })
         .WithName("GetOptionById")
         .Produces<OptionDetailsDto>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound);
 
         // POST /options
-        group.MapPost("/", async (CreateOptionDto newOption, IOptionRepository optionRepository) =>
+        group.MapPost("/", async (CreateOptionDto newOption, IOptionRepository optionRepository, IMapper mapper) =>
         {
             var createdOption = await optionRepository.CreateOptionAsync(newOption);
 
+            var createdOptionDetailsDto = mapper.Map<OptionDetailsDto>(createdOption);
+
             return Results.Created(
                 $"/options/{createdOption!.Id}",
-                createdOption.ToOptionDetailsDto());
+                createdOptionDetailsDto);
         })
         .WithName("CreateOption")
         .Produces<OptionDetailsDto>(StatusCodes.Status201Created)

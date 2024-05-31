@@ -1,6 +1,6 @@
-﻿using Bakery.Data;
+﻿using AutoMapper;
+using Bakery.Data;
 using Bakery.Dtos;
-using Bakery.Mapping;
 using Bakery.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,10 +9,12 @@ namespace Bakery.Repositories;
 public class ProductRepository : IProductRepository
 {
     private readonly BakeryDbContext _dbContext;
+    private readonly IMapper _mapper;
 
-    public ProductRepository(BakeryDbContext dbContext)
+    public ProductRepository(BakeryDbContext dbContext, IMapper mapper)
     {
         _dbContext = dbContext;
+        _mapper = mapper;
     }
 
     public async Task<List<Product>> GetProductsAsync(int? categoryId)
@@ -53,7 +55,7 @@ public class ProductRepository : IProductRepository
             return null;
         }
 
-        var product = newProduct.ToEntity();
+        var product = _mapper.Map<Product>(newProduct);
 
         _dbContext.Products.Add(product);
         await _dbContext.SaveChangesAsync();
@@ -76,10 +78,12 @@ public class ProductRepository : IProductRepository
             return false;
         }
 
+        var updateProductDto = _mapper.Map(updatedProduct, existingProduct);
+
         // Map updatedProduct to the existingProduct entity
         _dbContext.Entry(existingProduct)
             .CurrentValues
-            .SetValues(updatedProduct.ToEntity(id));
+            .SetValues(updateProductDto);
 
         await _dbContext.SaveChangesAsync();
         return true;

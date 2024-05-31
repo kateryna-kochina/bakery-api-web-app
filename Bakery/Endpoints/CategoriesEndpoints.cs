@@ -1,5 +1,5 @@
+using AutoMapper;
 using Bakery.Dtos;
-using Bakery.Mapping;
 using Bakery.Repositories.Contracts;
 
 namespace Bakery.Endpoints;
@@ -11,13 +11,11 @@ public static class CategoriesEndpoints
         var group = app.MapGroup("categories").WithTags("Categories");
 
         // GET /categories
-        group.MapGet("/", async (ICategoryRepository categoryRepository) =>
+        group.MapGet("/", async (ICategoryRepository categoryRepository, IMapper mapper) =>
         {
             var categories = await categoryRepository.GetCategoriesAsync();
 
-            var categoriesDtos = categories
-                .Select(c => c.ToCategoryDetailsDto())
-                .ToList();
+            var categoriesDtos = mapper.Map<List<CategoryDetailsDto>>(categories);
 
             return Results.Ok(categoriesDtos);
         })
@@ -25,7 +23,7 @@ public static class CategoriesEndpoints
         .Produces<List<CategoryDetailsDto>>(StatusCodes.Status200OK);
 
         // GET /categories/{id}
-        group.MapGet("/{id}", async (int id, ICategoryRepository categoryRepository) =>
+        group.MapGet("/{id}", async (int id, ICategoryRepository categoryRepository, IMapper mapper) =>
         {
             var category = await categoryRepository.GetCategoryByIdAsync(id);
 
@@ -34,20 +32,24 @@ public static class CategoriesEndpoints
                 return Results.NotFound();
             }
 
-            return Results.Ok(category.ToCategoryDetailsDto());
+            var categoryDetailsDto = mapper.Map<CategoryDetailsDto>(category);
+
+            return Results.Ok(categoryDetailsDto);
         })
         .WithName("GetCategoryById")
         .Produces<CategoryDetailsDto>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound);
 
         // POST /categories
-        group.MapPost("/", async (CreateCategoryDto newCategory, ICategoryRepository categoryRepository) =>
+        group.MapPost("/", async (CreateCategoryDto newCategory, ICategoryRepository categoryRepository, IMapper mapper) =>
         {
             var createdCategory = await categoryRepository.CreateCategoryAsync(newCategory);
 
+            var createdCategoryDetailsDto = mapper.Map<CategoryDetailsDto>(createdCategory);
+
             return Results.Created(
                 $"/categories/{createdCategory!.Id}",
-                createdCategory.ToCategoryDetailsDto());
+                createdCategoryDetailsDto);
         })
         .WithName("CreateCategory")
         .Produces<CategoryDetailsDto>(StatusCodes.Status201Created)

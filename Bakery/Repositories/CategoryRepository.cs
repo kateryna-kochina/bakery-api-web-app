@@ -1,6 +1,6 @@
-﻿using Bakery.Data;
+﻿using AutoMapper;
+using Bakery.Data;
 using Bakery.Dtos;
-using Bakery.Mapping;
 using Bakery.Models;
 using Bakery.Repositories.Contracts;
 using Microsoft.EntityFrameworkCore;
@@ -10,10 +10,12 @@ namespace Bakery.Repositories;
 public class CategoryRepository : ICategoryRepository
 {
     private readonly BakeryDbContext _dbContext;
+    private readonly IMapper _mapper;
 
-    public CategoryRepository(BakeryDbContext dbContext)
+    public CategoryRepository(BakeryDbContext dbContext, IMapper mapper)
     {
         _dbContext = dbContext;
+        _mapper = mapper;
     }
 
     public async Task<List<Category>> GetCategoriesAsync()
@@ -38,7 +40,7 @@ public class CategoryRepository : ICategoryRepository
 
     public async Task<Category?> CreateCategoryAsync(CreateCategoryDto newCategory)
     {
-        var category = newCategory.ToEntity();
+        var category = _mapper.Map<Category>(newCategory);
 
         _dbContext.Categories.Add(category);
         await _dbContext.SaveChangesAsync();
@@ -55,9 +57,11 @@ public class CategoryRepository : ICategoryRepository
             return false;
         }
 
+        var updatedCategoryDto = _mapper.Map(updatedCategory, existingCategory);
+
         _dbContext.Entry(existingCategory)
             .CurrentValues
-            .SetValues(updatedCategory.ToEntity(id));
+            .SetValues(updatedCategoryDto);
         await _dbContext.SaveChangesAsync();
 
         return true;

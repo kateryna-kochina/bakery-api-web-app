@@ -1,6 +1,6 @@
-﻿using Bakery.Data;
+﻿using AutoMapper;
+using Bakery.Data;
 using Bakery.Dtos;
-using Bakery.Mapping;
 using Bakery.Models;
 using Bakery.Repositories.Contracts;
 using Microsoft.EntityFrameworkCore;
@@ -10,10 +10,12 @@ namespace Bakery.Repositories;
 public class OptionRepository : IOptionRepository
 {
     private readonly BakeryDbContext _dbContext;
+    private readonly IMapper _mapper;
 
-    public OptionRepository(BakeryDbContext dbContext)
+    public OptionRepository(BakeryDbContext dbContext, IMapper mapper)
     {
         _dbContext = dbContext;
+        _mapper = mapper;
     }
 
     public async Task<List<Option>> GetOptionsAsync()
@@ -38,7 +40,7 @@ public class OptionRepository : IOptionRepository
 
     public async Task<Option?> CreateOptionAsync(CreateOptionDto newOption)
     {
-        var option = newOption.ToEntity();
+        var option = _mapper.Map<Option>(newOption);
 
         _dbContext.Options.Add(option);
         await _dbContext.SaveChangesAsync();
@@ -55,9 +57,11 @@ public class OptionRepository : IOptionRepository
             return false;
         }
 
+        var updatedOptionDto = _mapper.Map(updatedOption, existingOption);
+
         _dbContext.Entry(existingOption)
             .CurrentValues
-            .SetValues(updatedOption.ToEntity(id));
+            .SetValues(updatedOptionDto);
         await _dbContext.SaveChangesAsync();
 
         return true;

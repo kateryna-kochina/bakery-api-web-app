@@ -1,5 +1,7 @@
-﻿using Bakery.Dtos;
+﻿using AutoMapper;
+using Bakery.Dtos;
 using Bakery.Mapping;
+using Bakery.Models;
 using Bakery.Repositories;
 
 namespace Bakery.Endpoints;
@@ -11,13 +13,11 @@ public static class ProductsEndpoints
         var group = app.MapGroup("products").WithTags("Products");
 
         // GET /products
-        group.MapGet("/", async (int? categoryId, IProductRepository productRepository) =>
+        group.MapGet("/", async (int? categoryId, IProductRepository productRepository, IMapper mapper) =>
         {
             var products = await productRepository.GetProductsAsync(categoryId);
 
-            var productsDtos = products
-                .Select(p => p.ToProductDetailsDto())
-                .ToList();
+            var productsDtos = mapper.Map<List<ProductDetailsDto>>(products);
 
             return Results.Ok(productsDtos);
         })
@@ -25,7 +25,7 @@ public static class ProductsEndpoints
         .Produces<List<ProductDetailsDto>>(StatusCodes.Status200OK);
 
         // GET /products/{id}
-        group.MapGet("/{id}", async (int id, IProductRepository productRepository) =>
+        group.MapGet("/{id}", async (int id, IProductRepository productRepository, IMapper mapper) =>
         {
             var product = await productRepository.GetProductByIdAsync(id);
 
@@ -34,20 +34,24 @@ public static class ProductsEndpoints
                 return Results.NotFound();
             }
 
-            return Results.Ok(product.ToProductDetailsDto());
+            var productDto = mapper.Map<ProductDetailsDto>(product);
+
+            return Results.Ok(productDto);
         })
         .WithName("GetProductById")
         .Produces<ProductDetailsDto>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound);
 
         // POST /products
-        group.MapPost("/", async (CreateProductDto newProduct, IProductRepository productRepository) =>
+        group.MapPost("/", async (CreateProductDto newProduct, IProductRepository productRepository, IMapper mapper) =>
         {
             var createdProduct = await productRepository.CreateProductAsync(newProduct);
 
+            var createdProductDetailsDto = mapper.Map<Product>(createdProduct);
+
             return Results.Created(
                 $"/products/{createdProduct!.Id}",
-                createdProduct.ToProductDetailsDto());
+                createdProductDetailsDto);
         })
         .WithName("CreateProduct")
         .Produces<ProductDetailsDto>(StatusCodes.Status201Created)
