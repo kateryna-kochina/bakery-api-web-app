@@ -17,12 +17,14 @@ public class ProductsEndpointsTests
     private readonly Mock<IProductRepository> _mockProductRepository;
     private readonly Mock<IMapper> _mockMapper;
     private readonly Mock<IValidator<CreateProductDto>> _mockCreateProductDtoValidator;
+    private readonly Mock<IValidator<UpdateProductDto>> _mockUpdateProductDtoValidator;
 
     public ProductsEndpointsTests()
     {
         _mockProductRepository = new Mock<IProductRepository>();
         _mockMapper = new Mock<IMapper>();
         _mockCreateProductDtoValidator = new Mock<IValidator<CreateProductDto>>();
+        _mockUpdateProductDtoValidator = new Mock<IValidator<UpdateProductDto>>();
     }
 
     [Fact]
@@ -144,13 +146,16 @@ public class ProductsEndpointsTests
 
         _mockProductRepository.Setup(repo =>
             repo.UpdateProductAsync(It.Is<int>(id => id == expectedId), updatedProduct)).ReturnsAsync(expectedResult);
+        _mockUpdateProductDtoValidator.Setup(v => v.ValidateAsync(updatedProduct, default))
+               .ReturnsAsync(new ValidationResult());
 
         // Act
-        var result = await ProductsEndpoints.UpdateProductAsync(expectedId, updatedProduct, _mockProductRepository.Object);
+        var result = await ProductsEndpoints.UpdateProductAsync(
+            expectedId, updatedProduct, _mockProductRepository.Object, _mockUpdateProductDtoValidator.Object);
 
         // Assert
         result.Should().NotBeNull();
-        result.Should().BeOfType<Results<NoContent, NotFound<string>>>();
+        result.Should().BeOfType<Results<NoContent, NotFound<string>, BadRequest<string>>>();
 
         var noContentResult = (NoContent)result.Result;
         noContentResult.StatusCode.Should().Be(StatusCodes.Status204NoContent);
@@ -168,13 +173,16 @@ public class ProductsEndpointsTests
 
         _mockProductRepository.Setup(repo =>
             repo.UpdateProductAsync(It.Is<int>(id => id == expectedId), updatedProduct)).ReturnsAsync(expectedResult);
+        _mockUpdateProductDtoValidator.Setup(v => v.ValidateAsync(updatedProduct, default))
+               .ReturnsAsync(new ValidationResult());
 
         // Act
-        var result = await ProductsEndpoints.UpdateProductAsync(expectedId, updatedProduct, _mockProductRepository.Object);
+        var result = await ProductsEndpoints.UpdateProductAsync(
+            expectedId, updatedProduct, _mockProductRepository.Object, _mockUpdateProductDtoValidator.Object);
 
         // Assert
         result.Should().NotBeNull();
-        result.Should().BeOfType<Results<NoContent, NotFound<string>>>();
+        result.Should().BeOfType<Results<NoContent, NotFound<string>, BadRequest<string>>>();
 
         var notFoundResult = (NotFound<string>)result.Result;
         notFoundResult.StatusCode.Should().Be(StatusCodes.Status404NotFound);

@@ -43,8 +43,8 @@ This project consists of the following key components:
 ### Installation
 1. Clone the repository:
 ```
-git clone https://github.com/kateryna-kochina/Bakery.git
-cd Bakery
+git clone https://github.com/kateryna-kochina/bakery-web-api.git
+cd bakery-web-api
 ```
 2. Install the required packages:
 ```

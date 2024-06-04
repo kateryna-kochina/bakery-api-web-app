@@ -17,12 +17,14 @@ public class OptionsEndpointsTests
     private readonly Mock<IOptionRepository> _mockOptionRepository;
     private readonly Mock<IMapper> _mockMapper;
     private readonly Mock<IValidator<CreateOptionDto>> _mockCreateOptionDtoValidator;
+    private readonly Mock<IValidator<UpdateOptionDto>> _mockUpdateOptionDtoValidator;
 
     public OptionsEndpointsTests()
     {
         _mockOptionRepository = new Mock<IOptionRepository>();
         _mockMapper = new Mock<IMapper>();
         _mockCreateOptionDtoValidator = new Mock<IValidator<CreateOptionDto>>();
+        _mockUpdateOptionDtoValidator = new Mock<IValidator<UpdateOptionDto>>();
     }
 
     [Fact]
@@ -143,13 +145,17 @@ public class OptionsEndpointsTests
 
         _mockOptionRepository.Setup(repo =>
             repo.UpdateOptionAsync(It.Is<int>(id => id == expectedId), updatedOption)).ReturnsAsync(expectedResult);
+        _mockUpdateOptionDtoValidator.Setup(v => v.ValidateAsync(updatedOption, default))
+               .ReturnsAsync(new ValidationResult());
+
 
         // Act
-        var result = await OptionsEndpoints.UpdateOptionAsync(expectedId, updatedOption, _mockOptionRepository.Object);
+        var result = await OptionsEndpoints.UpdateOptionAsync(
+            expectedId, updatedOption, _mockOptionRepository.Object, _mockUpdateOptionDtoValidator.Object);
 
         // Assert
         result.Should().NotBeNull();
-        result.Should().BeOfType<Results<NoContent, NotFound<string>>>();
+        result.Should().BeOfType<Results<NoContent, NotFound<string>, BadRequest<string>>>();
 
         var noContentResult = (NoContent)result.Result;
         noContentResult.StatusCode.Should().Be(StatusCodes.Status204NoContent);
@@ -167,13 +173,16 @@ public class OptionsEndpointsTests
 
         _mockOptionRepository.Setup(repo =>
             repo.UpdateOptionAsync(It.Is<int>(id => id == expectedId), updatedOption)).ReturnsAsync(expectedResult);
+        _mockUpdateOptionDtoValidator.Setup(v => v.ValidateAsync(updatedOption, default))
+               .ReturnsAsync(new ValidationResult());
 
         // Act
-        var result = await OptionsEndpoints.UpdateOptionAsync(expectedId, updatedOption, _mockOptionRepository.Object);
+        var result = await OptionsEndpoints.UpdateOptionAsync(
+            expectedId, updatedOption, _mockOptionRepository.Object, _mockUpdateOptionDtoValidator.Object);
 
         // Assert
         result.Should().NotBeNull();
-        result.Should().BeOfType<Results<NoContent, NotFound<string>>>();
+        result.Should().BeOfType<Results<NoContent, NotFound<string>, BadRequest<string>>>();
 
         var notFoundResult = (NotFound<string>)result.Result;
         notFoundResult.StatusCode.Should().Be(StatusCodes.Status404NotFound);

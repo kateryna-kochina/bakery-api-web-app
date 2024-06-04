@@ -14,34 +14,35 @@ public static class OptionsEndpoints
         var group = app.MapGroup("options").WithTags("Options");
 
         group.MapGet("/", GetOptionsAsync)
-        .WithName(nameof(GetOptionsAsync))
-        .Produces<List<OptionDetailsDto>>(StatusCodes.Status200OK);
+            .WithName(nameof(GetOptionsAsync))
+            .Produces<List<OptionDetailsDto>>(StatusCodes.Status200OK);
 
         group.MapGet("/{id}", GetOptionByIdAsync)
-        .WithName(nameof(GetOptionByIdAsync))
-        .Produces<OptionDetailsDto>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+            .WithName(nameof(GetOptionByIdAsync))
+            .Produces<OptionDetailsDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
 
         group.MapPost("/", CreateOptionAsync)
-        .WithName(nameof(CreateOptionAsync))
-        .Produces<OptionDetailsDto>(StatusCodes.Status201Created)
-        .Produces(StatusCodes.Status400BadRequest);
+            .WithName(nameof(CreateOptionAsync))
+            .Produces<OptionDetailsDto>(StatusCodes.Status201Created)
+            .Produces(StatusCodes.Status400BadRequest);
 
         group.MapPut("/{id}", UpdateOptionAsync)
-        .WithName(nameof(UpdateOptionAsync))
-        .Produces(StatusCodes.Status204NoContent)
-        .Produces(StatusCodes.Status404NotFound);
+            .WithName(nameof(UpdateOptionAsync))
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status404NotFound);
 
         group.MapDelete("/{id}", DeleteOptionAsync)
-        .WithName(nameof(DeleteOptionAsync))
-        .Produces(StatusCodes.Status204NoContent)
-        .Produces(StatusCodes.Status404NotFound);
+            .WithName(nameof(DeleteOptionAsync))
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status404NotFound);
 
         return group;
     }
 
     // GET /options
-    public static async Task<Ok<List<OptionDetailsDto>>> GetOptionsAsync(IOptionRepository optionRepository, IMapper mapper)
+    public static async Task<Ok<List<OptionDetailsDto>>> GetOptionsAsync(
+        IOptionRepository optionRepository, IMapper mapper)
     {
         var options = await optionRepository.GetOptionsAsync();
 
@@ -51,7 +52,8 @@ public static class OptionsEndpoints
     }
 
     // GET /options/{id}
-    public static async Task<Results<Ok<OptionDetailsDto>, NotFound<string>>> GetOptionByIdAsync(int id, IOptionRepository optionRepository, IMapper mapper)
+    public static async Task<Results<Ok<OptionDetailsDto>, NotFound<string>>> GetOptionByIdAsync(
+        int id, IOptionRepository optionRepository, IMapper mapper)
     {
         var option = await optionRepository.GetOptionByIdAsync(id);
 
@@ -66,7 +68,8 @@ public static class OptionsEndpoints
     }
 
     // POST /options
-    public static async Task<Results<Created<OptionDetailsDto>, BadRequest<string>>> CreateOptionAsync(CreateOptionDto newOption, IOptionRepository optionRepository, IMapper mapper, IValidator<CreateOptionDto> validator)
+    public static async Task<Results<Created<OptionDetailsDto>, BadRequest<string>>> CreateOptionAsync(
+        CreateOptionDto newOption, IOptionRepository optionRepository, IMapper mapper, IValidator<CreateOptionDto> validator)
     {
         if (newOption is null)
         {
@@ -89,8 +92,22 @@ public static class OptionsEndpoints
     }
 
     // PUT /options/{id}
-    public static async Task<Results<NoContent, NotFound<string>>> UpdateOptionAsync(int id, UpdateOptionDto updatedOption, IOptionRepository optionRepository)
+    public static async Task<Results<NoContent, NotFound<string>, BadRequest<string>>> UpdateOptionAsync(
+        int id, UpdateOptionDto updatedOption, IOptionRepository optionRepository, IValidator<UpdateOptionDto> validator)
     {
+        if (updatedOption is null)
+        {
+            return TypedResults.BadRequest(EndpointsConstants.Option.BAD_REQUEST_MESSAGE);
+        }
+
+        var validationResult = await validator.ValidateAsync(updatedOption);
+
+        if (!validationResult.IsValid)
+        {
+            var errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
+            return TypedResults.BadRequest(errors);
+        }
+
         var result = await optionRepository.UpdateOptionAsync(id, updatedOption);
 
         if (!result)
@@ -102,7 +119,8 @@ public static class OptionsEndpoints
     }
 
     // DELETE /options/{id}
-    public static async Task<Results<NoContent, NotFound<string>>> DeleteOptionAsync(int id, IOptionRepository optionRepository)
+    public static async Task<Results<NoContent, NotFound<string>>> DeleteOptionAsync(
+        int id, IOptionRepository optionRepository)
     {
         var result = await optionRepository.DeleteOptionAsync(id);
 

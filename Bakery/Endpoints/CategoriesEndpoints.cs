@@ -14,35 +14,36 @@ public static class CategoriesEndpoints
         var group = app.MapGroup("categories").WithTags("Categories");
 
         group.MapGet("/", GetCategoriesAsync)
-        .WithName(nameof(GetCategoriesAsync))
-        .Produces<List<CategoryDetailsDto>>(StatusCodes.Status200OK);
+            .WithName(nameof(GetCategoriesAsync))
+            .Produces<List<CategoryDetailsDto>>(StatusCodes.Status200OK);
 
         group.MapGet("/{id}", GetCategoryByIdAsync)
-        .WithName(nameof(GetCategoryByIdAsync))
-        .Produces<CategoryDetailsDto>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+            .WithName(nameof(GetCategoryByIdAsync))
+            .Produces<CategoryDetailsDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
 
         group.MapPost("/", CreateCategoryAsync)
-        .WithName(nameof(CreateCategoryAsync))
-        .Produces<CategoryDetailsDto>(StatusCodes.Status201Created)
-        .Produces(StatusCodes.Status400BadRequest);
+            .WithName(nameof(CreateCategoryAsync))
+            .Produces<CategoryDetailsDto>(StatusCodes.Status201Created)
+            .Produces(StatusCodes.Status400BadRequest);
 
         group.MapPut("/{id}", UpdateCategoryAsync)
-        .WithName(nameof(UpdateCategoryAsync))
-        .Produces(StatusCodes.Status204NoContent)
-        .Produces(StatusCodes.Status404NotFound);
+            .WithName(nameof(UpdateCategoryAsync))
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status404NotFound);
 
         // DELETE /categories/{id}
         group.MapDelete("/{id}", DeleteCategoryAsync)
-        .WithName(nameof(DeleteCategoryAsync))
-        .Produces(StatusCodes.Status204NoContent)
-        .Produces(StatusCodes.Status404NotFound);
+            .WithName(nameof(DeleteCategoryAsync))
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status404NotFound);
 
         return group;
     }
 
     // GET /categories
-    public static async Task<Ok<List<CategoryDetailsDto>>> GetCategoriesAsync(ICategoryRepository categoryRepository, IMapper mapper)
+    public static async Task<Ok<List<CategoryDetailsDto>>> GetCategoriesAsync(
+        ICategoryRepository categoryRepository, IMapper mapper)
     {
         var categories = await categoryRepository.GetCategoriesAsync();
 
@@ -52,7 +53,8 @@ public static class CategoriesEndpoints
     }
 
     // GET /categories/{id}
-    public static async Task<Results<Ok<CategoryDetailsDto>, NotFound<string>>> GetCategoryByIdAsync(int id, ICategoryRepository categoryRepository, IMapper mapper)
+    public static async Task<Results<Ok<CategoryDetailsDto>, NotFound<string>>> GetCategoryByIdAsync(
+        int id, ICategoryRepository categoryRepository, IMapper mapper)
     {
         var category = await categoryRepository.GetCategoryByIdAsync(id);
 
@@ -67,7 +69,8 @@ public static class CategoriesEndpoints
     }
 
     // POST /categories
-    public static async Task<Results<Created<CategoryDetailsDto>, BadRequest<string>>> CreateCategoryAsync(CreateCategoryDto newCategory, ICategoryRepository categoryRepository, IMapper mapper, IValidator<CreateCategoryDto> validator)
+    public static async Task<Results<Created<CategoryDetailsDto>, BadRequest<string>>> CreateCategoryAsync(
+        CreateCategoryDto newCategory, ICategoryRepository categoryRepository, IMapper mapper, IValidator<CreateCategoryDto> validator)
     {
         if (newCategory is null)
         {
@@ -90,8 +93,21 @@ public static class CategoriesEndpoints
     }
 
     // PUT /categories/{id}
-    public static async Task<Results<NoContent, NotFound<string>>> UpdateCategoryAsync(int id, UpdateCategoryDto updatedCategory, ICategoryRepository categoryRepository)
+    public static async Task<Results<NoContent, NotFound<string>, BadRequest<string>>> UpdateCategoryAsync(
+        int id, UpdateCategoryDto updatedCategory, ICategoryRepository categoryRepository, IValidator<UpdateCategoryDto> validator)
     {
+        if (updatedCategory is null)
+        {
+            return TypedResults.BadRequest(EndpointsConstants.Category.BAD_REQUEST_MESSAGE);
+        }
+
+        var validationResult = await validator.ValidateAsync(updatedCategory);
+
+        if (!validationResult.IsValid)
+        {
+            var errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
+            return TypedResults.BadRequest(errors);
+        }
         
         var result = await categoryRepository.UpdateCategoryAsync(id, updatedCategory);
 
@@ -104,7 +120,8 @@ public static class CategoriesEndpoints
     }
 
     // DELETE /categories/{id}
-    public static async Task<Results<NoContent, NotFound<string>>> DeleteCategoryAsync(int id, ICategoryRepository categoryRepository)
+    public static async Task<Results<NoContent, NotFound<string>>> DeleteCategoryAsync(
+        int id, ICategoryRepository categoryRepository)
     {
         var result = await categoryRepository.DeleteCategoryAsync(id);
 

@@ -18,4 +18,18 @@ public class OptionValidator
                 .NotNull();
         }
     }
+
+    public class UpdateOptionDtoValidator : AbstractValidator<UpdateOptionDto>
+    {
+        public UpdateOptionDtoValidator()
+        {
+            RuleFor(o => o.OptionName)
+                .NotNull()
+                .NotEmpty()
+                .MaximumLength(25);
+
+            RuleFor(o => o.Coefficient)
+                .NotNull();
+        }
+    }
 }

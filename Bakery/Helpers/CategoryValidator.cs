@@ -15,4 +15,15 @@ public class CategoryValidator
                 .MaximumLength(25);
         }
     }
+
+    public class UpdateCategoryDtoValidator : AbstractValidator<UpdateCategoryDto>
+    {
+        public UpdateCategoryDtoValidator()
+        {
+            RuleFor(c => c.CategoryName)
+                .NotNull()
+                .NotEmpty()
+                .MaximumLength(25);
+        }
+    }
 }

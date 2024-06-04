@@ -14,34 +14,35 @@ public static class ProductsEndpoints
         var group = app.MapGroup("products").WithTags("Products");
 
         group.MapGet("/", GetProductsAsync)
-        .WithName(nameof(GetProductsAsync))
-        .Produces<List<ProductDetailsDto>>(StatusCodes.Status200OK);
+            .WithName(nameof(GetProductsAsync))
+            .Produces<List<ProductDetailsDto>>(StatusCodes.Status200OK);
 
         group.MapGet("/{id}", GetProductByIdAsync)
-        .WithName(nameof(GetProductByIdAsync))
-        .Produces<ProductDetailsDto>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+            .WithName(nameof(GetProductByIdAsync))
+            .Produces<ProductDetailsDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
 
         group.MapPost("/", CreateProductAsync)
-        .WithName(nameof(CreateProductAsync))
-        .Produces<ProductDetailsDto>(StatusCodes.Status201Created)
-        .Produces(StatusCodes.Status404NotFound);
+            .WithName(nameof(CreateProductAsync))
+            .Produces<ProductDetailsDto>(StatusCodes.Status201Created)
+            .Produces(StatusCodes.Status404NotFound);
 
         group.MapPut("/{id}", UpdateProductAsync)
-        .WithName(nameof(UpdateProductAsync))
-        .Produces(StatusCodes.Status204NoContent)
-        .Produces(StatusCodes.Status404NotFound);
+            .WithName(nameof(UpdateProductAsync))
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status404NotFound);
 
         group.MapDelete("/{id}", DeleteProductAsync)
-        .WithName(nameof(DeleteProductAsync))
-        .Produces(StatusCodes.Status204NoContent)
-        .Produces(StatusCodes.Status404NotFound);
+            .WithName(nameof(DeleteProductAsync))
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status404NotFound);
 
         return group;
     }
 
     // GET /products
-    public static async Task<Ok<List<ProductDetailsDto>>> GetProductsAsync(int? categoryId, IProductRepository productRepository, IMapper mapper)
+    public static async Task<Ok<List<ProductDetailsDto>>> GetProductsAsync(
+        int? categoryId, IProductRepository productRepository, IMapper mapper)
     {
         var products = await productRepository.GetProductsAsync(categoryId);
 
@@ -51,7 +52,8 @@ public static class ProductsEndpoints
     }
 
     // GET /products/{id}
-    public static async Task<Results<Ok<ProductDetailsDto>, NotFound<string>>> GetProductByIdAsync(int id, IProductRepository productRepository, IMapper mapper)
+    public static async Task<Results<Ok<ProductDetailsDto>, NotFound<string>>> GetProductByIdAsync(
+        int id, IProductRepository productRepository, IMapper mapper)
     {
         var product = await productRepository.GetProductByIdAsync(id);
 
@@ -66,7 +68,8 @@ public static class ProductsEndpoints
     }
 
     // POST /products
-    public static async Task<Results<Created<ProductDetailsDto>, BadRequest<string>>> CreateProductAsync(CreateProductDto newProduct, IProductRepository productRepository, IMapper mapper, IValidator<CreateProductDto> validator)
+    public static async Task<Results<Created<ProductDetailsDto>, BadRequest<string>>> CreateProductAsync(
+        CreateProductDto newProduct, IProductRepository productRepository, IMapper mapper, IValidator<CreateProductDto> validator)
     {
         if (newProduct is null)
         {
@@ -89,8 +92,22 @@ public static class ProductsEndpoints
     }
 
     // PUT /products/{id}
-    public static async Task<Results<NoContent, NotFound<string>>> UpdateProductAsync(int id, UpdateProductDto updatedProduct, IProductRepository productRepository)
+    public static async Task<Results<NoContent, NotFound<string>, BadRequest<string>>> UpdateProductAsync(
+        int id, UpdateProductDto updatedProduct, IProductRepository productRepository, IValidator<UpdateProductDto> validator)
     {
+        if (updatedProduct is null)
+        {
+            return TypedResults.BadRequest(EndpointsConstants.Option.BAD_REQUEST_MESSAGE);
+        }
+
+        var validationResult = await validator.ValidateAsync(updatedProduct);
+
+        if (!validationResult.IsValid)
+        {
+            var errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
+            return TypedResults.BadRequest(errors);
+        }
+
         var result = await productRepository.UpdateProductAsync(id, updatedProduct);
 
         if (!result)
@@ -102,7 +119,8 @@ public static class ProductsEndpoints
     }
 
     // DELETE /products/{id}
-    public static async Task<Results<NoContent, NotFound<string>>> DeleteProductAsync(int id, IProductRepository productRepository)
+    public static async Task<Results<NoContent, NotFound<string>>> DeleteProductAsync(
+        int id, IProductRepository productRepository)
     {
         var result = await productRepository.DeleteProductAsync(id);
 

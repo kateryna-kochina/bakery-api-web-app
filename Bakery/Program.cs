@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using static Bakery.Helpers.CategoryValidator;
 using static Bakery.Helpers.OptionValidator;
+using static Bakery.Helpers.ProductValidator;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +33,10 @@ builder.Services.AddTransient<IOptionRepository, OptionRepository>();
 // Register validators
 builder.Services.AddScoped<IValidator<CreateCategoryDto>, CreateCategoryDtoValidator>();
 builder.Services.AddScoped<IValidator<CreateOptionDto>, CreateOptionDtoValidator>();
+builder.Services.AddScoped<IValidator<CreateProductDto>, CreateProductDtoValidator>();
+builder.Services.AddScoped<IValidator<UpdateCategoryDto>, UpdateCategoryDtoValidator>();
+builder.Services.AddScoped<IValidator<UpdateOptionDto>, UpdateOptionDtoValidator>();
+builder.Services.AddScoped<IValidator<UpdateProductDto>, UpdateProductDtoValidator>();
 
 
 var app = builder.Build();

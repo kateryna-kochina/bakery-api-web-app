@@ -32,4 +32,32 @@ public class ProductValidator
                 .MaximumLength(1000);
         }
     }
+
+    public class UpdateProductDtoValidator : AbstractValidator<UpdateProductDto>
+    {
+        public UpdateProductDtoValidator()
+        {
+            RuleFor(p => p.Title)
+                .NotNull()
+                .NotEmpty()
+                .MaximumLength(50);
+
+            RuleFor(p => p.Price)
+                .NotNull()
+                .NotEmpty()
+                .InclusiveBetween(1, 1000);
+
+            RuleFor(p => p.Image)
+                .NotNull()
+                .NotEmpty()
+                .MaximumLength(500);
+
+            RuleFor(p => p.CategoryId)
+                .NotNull()
+                .NotEmpty();
+
+            RuleFor(p => p.Description)
+                .MaximumLength(1000);
+        }
+    }
 }
