@@ -26,7 +26,7 @@ public class CategoriesEndpointsTests
     }
 
     [Fact]
-    public async Task CategoriesEndpoints_GetCategories_ReturnsOkResult()
+    public async Task CategoriesEndpoints_GetCategoriesAsync_ReturnsOkResult()
     {
         // Arrange
         var categories = new List<Category> { new() { Id = 1, CategoryName = "Bread" } };
@@ -79,10 +79,10 @@ public class CategoriesEndpointsTests
     public async Task CategoriesEndpoints_GetCategoryByIdAsync_ReturnsNotFoundResult()
     {
         // Arrange
-        var expectedId = 1;
+        var existingId = 1;
         var nonExistingCategoryId = 10;
-        var category = new Category { Id = expectedId, CategoryName = "Bread" };
-        var categoryDetailsDto = new CategoryDetailsDto(expectedId, "Bread");
+        var category = new Category { Id = existingId, CategoryName = "Bread" };
+        var categoryDetailsDto = new CategoryDetailsDto(existingId, "Bread");
 
         _mockCategoryRepository.Setup(repo =>
             repo.GetCategoryByIdAsync(It.Is<int>(id => id == category.Id))).ReturnsAsync(category);

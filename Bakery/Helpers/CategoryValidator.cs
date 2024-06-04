@@ -9,8 +9,10 @@ public class CategoryValidator
     {
         public CreateCategoryDtoValidator()
         {
-            RuleFor(c => c.CategoryName).NotNull().NotEmpty().MaximumLength(25);
+            RuleFor(c => c.CategoryName)
+                .NotNull()
+                .NotEmpty()
+                .MaximumLength(25);
         }
     }
-
 }

@@ -43,8 +43,8 @@ This project consists of the following key components:
 ### Installation
 1. Clone the repository:
 ```
-git clone https://github.com/your-username/bakery-api.git
-cd bakery-api
+git clone https://github.com/kateryna-kochina/Bakery.git
+cd Bakery
 ```
 2. Install the required packages:
 ```
@@ -55,7 +55,7 @@ Ensure you have the correct connection string in appsettings.json. Then, apply t
 ```
 dotnet ef database update
 ```
-4. Running the Application
+4. Running the application
 Run the application using the following command:
 ```
 dotnet run
