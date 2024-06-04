@@ -1,10 +1,13 @@
 using Bakery.Data;
+using Bakery.Dtos;
 using Bakery.Endpoints;
 using Bakery.Mapping;
 using Bakery.Repositories;
 using Bakery.Repositories.Contracts;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using static Bakery.Helpers.CategoryValidator;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +27,9 @@ builder.Services.AddSqlite<BakeryDbContext>(connectionString);
 builder.Services.AddTransient<IProductRepository, ProductRepository>();
 builder.Services.AddTransient<ICategoryRepository, CategoryRepository>();
 builder.Services.AddTransient<IOptionRepository, OptionRepository>();
+
+// Register validators
+builder.Services.AddScoped<IValidator<CreateCategoryDto>, CreateCategoryDtoValidator>();
 
 
 var app = builder.Build();

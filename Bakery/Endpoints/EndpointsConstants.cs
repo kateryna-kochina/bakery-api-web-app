@@ -5,6 +5,7 @@ public static class EndpointsConstants
     public static class Category
     {
         public const string NOT_FOUND_MESSAGE = "Category not found.";
+        public const string BAD_REQUEST_MESSAGE = "The provided category data is invalid.";
     }
 
     public static class Option

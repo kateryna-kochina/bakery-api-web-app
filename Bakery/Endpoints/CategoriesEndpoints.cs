@@ -1,6 +1,8 @@
 using AutoMapper;
 using Bakery.Dtos;
 using Bakery.Repositories.Contracts;
+using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Bakery.Endpoints;
@@ -65,12 +67,19 @@ public static class CategoriesEndpoints
     }
 
     // POST /categories
-    public static async Task<Results<Created<CategoryDetailsDto>, BadRequest>> CreateCategoryAsync(CreateCategoryDto newCategory, ICategoryRepository categoryRepository, IMapper mapper)
+    public static async Task<Results<Created<CategoryDetailsDto>, BadRequest<string>>> CreateCategoryAsync(CreateCategoryDto newCategory, ICategoryRepository categoryRepository, IMapper mapper, IValidator<CreateCategoryDto> validator)
     {
-        // TODO: add DTO model validation
         if (newCategory is null)
         {
-            return TypedResults.BadRequest();
+            return TypedResults.BadRequest(EndpointsConstants.Category.BAD_REQUEST_MESSAGE);
+        }
+
+        ValidationResult validationResult = await validator.ValidateAsync(newCategory);
+
+        if (!validationResult.IsValid)
+        {
+            var errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
+            return TypedResults.BadRequest(errors);
         }
 
         var createdCategory = await categoryRepository.CreateCategoryAsync(newCategory);
@@ -83,6 +92,7 @@ public static class CategoriesEndpoints
     // PUT /categories/{id}
     public static async Task<Results<NoContent, NotFound<string>>> UpdateCategoryAsync(int id, UpdateCategoryDto updatedCategory, ICategoryRepository categoryRepository)
     {
+        
         var result = await categoryRepository.UpdateCategoryAsync(id, updatedCategory);
 
         if (!result)
