@@ -47,7 +47,7 @@ public class CategoriesEndpointsTests
         result.Value.Should().BeEquivalentTo(categoriesDtos);
 
         _mockCategoryRepository.Verify(repo => repo.GetCategoriesAsync(), Times.Once);
-        _mockMapper.Verify(m => m.Map<List<CategoryDetailsDto>>(categories), Times.Once);
+        _mockMapper.Verify(m => m.Map<List<CategoryDetailsDto>>(categories), Times.Never); // intentionally failing test in CI testing purposes
     }
 
     [Fact]
